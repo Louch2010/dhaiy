@@ -81,7 +81,7 @@ func handleShortConn(conn net.Conn, timeout int, token string) {
 	client := &common.Client{}
 	client.Reqest = splitParam(line)
 	ParserRequest(client)
-	response := *client.Response
+	response := client.Response
 	conn.Write([]byte(common.TransferResponse(response)))
 	log.Debug("请求处理完成，响应状态为：", response.Code, "响应内容为：", response.Data)
 	conn.Close()
@@ -114,19 +114,21 @@ func handleLongConn(conn net.Conn, timeout int, token string) {
 		//解析请求
 		client.Token = token
 		client.Reqest = splitParam(line)
+		client.Response = common.ServerRespMsg{} //将response置为空
 		//请求内容为空时，不处理
 		if len(client.Reqest) == 0 {
 			log.Debug("请求内容为空，不处理")
 			client.Response = common.GetServerRespMsg(common.MESSAGE_SUCCESS, "", nil, client)
 		} else {
+			log.Debug("======响应1：", client.Response)
 			ParserRequest(client) //处理
+			log.Debug("======响应2：", client.Response)
 		}
-		response := *client.Response
-		log.Debug("======响应3：", response)
+		response := client.Response
 		//将client进行缓存
 		if response.Err == nil && response.Client != nil {
-			log.Debug("======响应4：", response)
-			//client = response.Client
+			log.Debug("======缓存客户端信息：", response)
+			client = response.Client
 		}
 		//响应
 		data := common.TransferResponse(response)

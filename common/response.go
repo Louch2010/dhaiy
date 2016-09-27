@@ -25,7 +25,7 @@ type JsonRespMsg struct {
 	DataType string //数据类型
 }
 
-func GetServerRespMsg(code string, data interface{}, err error, c *Client) *ServerRespMsg {
+func GetServerRespMsg(code string, data interface{}, err error, c *Client) ServerRespMsg {
 	resp := ServerRespMsg{
 		Code:     code,
 		Data:     data,
@@ -34,7 +34,7 @@ func GetServerRespMsg(code string, data interface{}, err error, c *Client) *Serv
 		Clo:      false,
 		Client:   c,
 	}
-	return &resp
+	return resp
 }
 
 //根据连接协议，将响应内容进行封装

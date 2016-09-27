@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/louch2010/dhaiy/cache"
+	"github.com/louch2010/dhaiy/cmd"
 	"github.com/louch2010/dhaiy/common"
 	"github.com/louch2010/dhaiy/log"
 	"github.com/louch2010/dhaiy/server"
@@ -41,6 +42,8 @@ func main() {
 		log.Error("初始化缓存失败！", err)
 		return
 	}
+	//初始化命令
+	cmd.InitCmd()
 	//启动服务
 	port := common.GetSystemConfig().MustInt("server", "port", 1334)
 	aliveTime := common.GetSystemConfig().MustInt("server", "aliveTime", 30)
