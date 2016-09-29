@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"github.com/louch2010/dhaiy/cache"
-	"github.com/louch2010/dhaiy/common"
+	. "github.com/louch2010/dhaiy/common"
 	"github.com/louch2010/dhaiy/log"
 )
 
 //命令集合
-var cmdHandlers = make(map[string]*common.Cmd)
+var cmdHandlers = make(map[string]*Cmd)
 
 //初始化命令集合
 func InitCmd() {
@@ -22,10 +22,11 @@ func InitCmd() {
 	//	cmdHandlers["showi"] = newCmd("showi", 0, 1, false, HandleShowiCommnd)
 	//	cmdHandlers["info"] = newCmd("info", 0, 0, false, HandleInfoCommnd)
 	//	cmdHandlers["bgsave"] = newCmd("bgsave", 0, 0, false, HandleBgSaveCommnd)
+	log.Info("初始化命令集合完成")
 }
 
-func newCmd(name string, min int, max int, write bool, f func(client *common.Client)) *common.Cmd {
-	cmd := common.Cmd{
+func newCmd(name string, min int, max int, write bool, f func(client *Client)) *Cmd {
+	cmd := Cmd{
 		Name:        name,
 		MinParam:    min,
 		MaxParam:    max,
@@ -35,7 +36,7 @@ func newCmd(name string, min int, max int, write bool, f func(client *common.Cli
 	return &cmd
 }
 
-func GetCmd(name string) *common.Cmd {
+func GetCmd(name string) *Cmd {
 	cmd, ok := cmdHandlers[name]
 	if !ok {
 		return nil
@@ -44,10 +45,10 @@ func GetCmd(name string) *common.Cmd {
 }
 
 //创建会话
-func CreateSession(token string, c *common.Client) bool {
+func CreateSession(token string, c *Client) bool {
 	//缓存登录信息
 	table, _ := cache.GetSysTable()
-	table.Set(token, c, 0, common.DATA_TYPE_OBJECT)
+	table.Set(token, c, 0, DATA_TYPE_OBJECT)
 	//创建表信息
 	cache.Cache(c.Table)
 	return true

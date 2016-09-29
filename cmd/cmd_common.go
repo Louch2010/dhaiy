@@ -6,21 +6,21 @@ import (
 	"strings"
 
 	"github.com/louch2010/dhaiy/cache"
-	"github.com/louch2010/dhaiy/common"
+	. "github.com/louch2010/dhaiy/common"
 	//"github.com/louch2010/dhaiy/gdb"
 	"github.com/louch2010/dhaiy/log"
 	"github.com/louch2010/goutil"
 )
 
 //ping命令处理
-func HandlePingCommnd(client *common.Client) {
-	client.Response = common.GetServerRespMsg(common.MESSAGE_SUCCESS, common.MESSAGE_PONG, nil, client)
+func HandlePingCommnd(client *Client) {
+	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, MESSAGE_PONG, nil, client)
 }
 
 //帮助命令处理
-func HandleHelpCommnd(client *common.Client) {
+func HandleHelpCommnd(client *Client) {
 	response := ""
-	help := common.GetHelpConfig()
+	help := GetHelpConfig()
 	if len(client.Reqest) == 0 { //没有请求体，则显示所有命令名称
 		for index, sec := range help.GetSectionList() {
 			response += "[" + strconv.Itoa(index+1) + "] " + sec + "\r\n"
@@ -38,12 +38,12 @@ func HandleHelpCommnd(client *common.Client) {
 			}
 		}
 	}
-	client.Response = common.GetServerRespMsg(common.MESSAGE_SUCCESS, response, nil, client)
+	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, response, nil, client)
 }
 
 //连接命令处理connect [-t'table'] [-a'pwd'] [-i'ip'] [-p'port'] [-e'e1,e2...']
-func HandleConnectCommnd(client *common.Client) {
-	table := common.GetSystemConfig().MustValue("table", "default", common.DEFAULT_TABLE_NAME)
+func HandleConnectCommnd(client *Client) {
+	table := GetSystemConfig().MustValue("table", "default", DEFAULT_TABLE_NAME)
 	token := client.Token
 	var pwd, ip, port, event, protocol string
 	args := client.Reqest[1:]
@@ -78,14 +78,14 @@ func HandleConnectCommnd(client *common.Client) {
 		}
 	}
 	//密码校验
-	syspwd := common.GetSystemConfig().MustValue("server", "password", "")
+	syspwd := GetSystemConfig().MustValue("server", "password", "")
 	if len(syspwd) > 0 {
 		if len(pwd) == 0 {
-			client.Response = common.GetServerRespMsg(common.MESSAGE_NO_PWD, "", common.ERROR_AUTHORITY_NO_PWD, nil)
+			client.Response = GetServerRespMsg(MESSAGE_NO_PWD, "", ERROR_AUTHORITY_NO_PWD, nil)
 			return
 		}
 		if syspwd != pwd {
-			client.Response = common.GetServerRespMsg(common.MESSAGE_PWD_ERROR, "", common.ERROR_AUTHORITY_PWD_ERROR, nil)
+			client.Response = GetServerRespMsg(MESSAGE_PWD_ERROR, "", ERROR_AUTHORITY_PWD_ERROR, nil)
 			return
 		}
 	}
@@ -95,26 +95,26 @@ func HandleConnectCommnd(client *common.Client) {
 		p, err := strconv.Atoi(port)
 		if err != nil {
 			log.Info("端口转换错误，", err)
-			client.Response = common.GetServerRespMsg(common.MESSAGE_PORT_ERROR, "", common.ERROR_PORT_ERROR, nil)
+			client.Response = GetServerRespMsg(MESSAGE_PORT_ERROR, "", ERROR_PORT_ERROR, nil)
 			return
 		}
 		portInt = p
 	}
 	//协议校验
-	if len(protocol) > 0 && protocol != common.PROTOCOL_RESPONSE_JSON && protocol != common.PROTOCOL_RESPONSE_TERMINAL {
+	if len(protocol) > 0 && protocol != PROTOCOL_RESPONSE_JSON && protocol != PROTOCOL_RESPONSE_TERMINAL {
 		log.Info("协议错误：", protocol)
-		client.Response = common.GetServerRespMsg(common.MESSAGE_PROTOCOL_ERROR, "", common.ERROR_PROTOCOL_ERROR, nil)
+		client.Response = GetServerRespMsg(MESSAGE_PROTOCOL_ERROR, "", ERROR_PROTOCOL_ERROR, nil)
 		return
 	}
 	//获取表
 	cacheTable, err := cache.Cache(table)
 	if err != nil {
 		log.Error("连接时获取表失败！", err)
-		client.Response = common.GetServerRespMsg(common.MESSAGE_ERROR, "", common.ERROR_SYSTEM, nil)
+		client.Response = GetServerRespMsg(MESSAGE_ERROR, "", ERROR_SYSTEM, nil)
 		return
 	}
 	//存储连接信息
-	client = &common.Client{
+	client = &Client{
 		Host:        ip,
 		Port:        portInt,
 		Table:       table,
@@ -124,33 +124,33 @@ func HandleConnectCommnd(client *common.Client) {
 		Token:       token,
 	}
 	CreateSession(token, client)
-	client.Response = common.GetServerRespMsg(common.MESSAGE_SUCCESS, token, nil, client)
+	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, token, nil, client)
 }
 
 //Delete命令处理
-func HandleDeleteCommnd(client *common.Client) {
+func HandleDeleteCommnd(client *Client) {
 	request := client.Reqest
 	if client.CacheTable.Delete(request[1]) {
-		client.Response = common.GetServerRespMsg(common.MESSAGE_SUCCESS, "", nil, client)
+		client.Response = GetServerRespMsg(MESSAGE_SUCCESS, "", nil, client)
 		return
 	}
-	client.Response = common.GetServerRespMsg(common.MESSAGE_ITEM_NOT_EXIST, "", common.ERROR_ITEM_NOT_EXIST, client)
+	client.Response = GetServerRespMsg(MESSAGE_ITEM_NOT_EXIST, "", ERROR_ITEM_NOT_EXIST, client)
 }
 
 //Exist命令处理
-func HandleExistCommnd(body string, client *common.Client) common.ServerRespMsg {
+func HandleExistCommnd(body string, client *Client) ServerRespMsg {
 	//请求体校验
 	args, resp, check := initParam(body, 1, 1)
 	if !check {
 		return resp
 	}
-	response := common.GetServerRespMsg(common.MESSAGE_SUCCESS, client.CacheTable.IsExist(args[0]), nil, client)
-	response.DataType = common.DATA_TYPE_BOOL
+	response := GetServerRespMsg(MESSAGE_SUCCESS, client.CacheTable.IsExist(args[0]), nil, client)
+	response.DataType = DATA_TYPE_BOOL
 	return response
 }
 
 //切换表
-func HandleUseCommnd(body string, client *common.Client) common.ServerRespMsg {
+func HandleUseCommnd(body string, client *Client) ServerRespMsg {
 	//请求体校验
 	args, resp, check := initParam(body, 1, 1)
 	if !check {
@@ -159,18 +159,18 @@ func HandleUseCommnd(body string, client *common.Client) common.ServerRespMsg {
 	cacheTable, err := cache.Cache(args[0])
 	if err != nil {
 		log.Error("切换表时获取表失败！", err)
-		return common.GetServerRespMsg(common.MESSAGE_ERROR, "", common.ERROR_SYSTEM, nil)
+		return GetServerRespMsg(MESSAGE_ERROR, "", ERROR_SYSTEM, nil)
 	}
 	client.Table = args[0]
 	client.CacheTable = cacheTable
 	if CreateSession(client.Token, client) {
-		return common.GetServerRespMsg(common.MESSAGE_SUCCESS, "", nil, client)
+		return GetServerRespMsg(MESSAGE_SUCCESS, "", nil, client)
 	}
-	return common.GetServerRespMsg(common.MESSAGE_ERROR, "", common.ERROR_SYSTEM, client)
+	return GetServerRespMsg(MESSAGE_ERROR, "", ERROR_SYSTEM, client)
 }
 
 //显示表信息
-func HandleShowtCommnd(body string, client *common.Client) common.ServerRespMsg {
+func HandleShowtCommnd(body string, client *Client) ServerRespMsg {
 	response := ""
 	args, resp, check := initParam(body, 0, 1)
 	if !check {
@@ -192,7 +192,7 @@ func HandleShowtCommnd(body string, client *common.Client) common.ServerRespMsg 
 	} else {
 		table, ok := cache.GetCacheTable(args[0])
 		if !ok {
-			return common.GetServerRespMsg(common.MESSAGE_TABLE_NOT_EXIST, response, common.ERROR_TABLE_NOT_EXIST, client)
+			return GetServerRespMsg(MESSAGE_TABLE_NOT_EXIST, response, ERROR_TABLE_NOT_EXIST, client)
 		}
 		response += "name:" + table.Name() + "\r\n"
 		response += "itemCount: " + strconv.Itoa(table.ItemCount()) + "\r\n"
@@ -201,11 +201,11 @@ func HandleShowtCommnd(body string, client *common.Client) common.ServerRespMsg 
 		response += "lastModifyTime: " + goutil.DateUtil().TimeFullFormat(table.LastModifyTime()) + "\r\n"
 		response += "accessCount: " + strconv.FormatInt(table.AccessCount(), 10)
 	}
-	return common.GetServerRespMsg(common.MESSAGE_SUCCESS, response, nil, client)
+	return GetServerRespMsg(MESSAGE_SUCCESS, response, nil, client)
 }
 
 //显示项信息
-func HandleShowiCommnd(body string, client *common.Client) common.ServerRespMsg {
+func HandleShowiCommnd(body string, client *Client) ServerRespMsg {
 	response := ""
 	table, _ := cache.Cache(client.Table)
 	args, resp, check := initParam(body, 0, 1)
@@ -222,7 +222,7 @@ func HandleShowiCommnd(body string, client *common.Client) common.ServerRespMsg 
 	} else {
 		item := table.Get(args[0])
 		if item == nil {
-			return common.GetServerRespMsg(common.MESSAGE_ITEM_NOT_EXIST, "", common.ERROR_ITEM_NOT_EXIST, client)
+			return GetServerRespMsg(MESSAGE_ITEM_NOT_EXIST, "", ERROR_ITEM_NOT_EXIST, client)
 		}
 		response += "key: " + item.Key() + "\r\n"
 		//response += "value: " + toString(item) + "\r\n"
@@ -232,42 +232,42 @@ func HandleShowiCommnd(body string, client *common.Client) common.ServerRespMsg 
 		response += "accessCount: " + strconv.FormatInt(item.AccessCount(), 10) + "\r\n"
 		response += "dataType: " + item.DataType() + "\r\n"
 	}
-	return common.GetServerRespMsg(common.MESSAGE_SUCCESS, response, nil, client)
+	return GetServerRespMsg(MESSAGE_SUCCESS, response, nil, client)
 }
 
 //服务器信息
-func HandleInfoCommnd(body string, client *common.Client) common.ServerRespMsg {
+func HandleInfoCommnd(body string, client *Client) ServerRespMsg {
 	_, resp, check := initParam(body, 0, 0)
 	if !check {
 		return resp
 	}
 	//获取默认section中的信息
-	info, _ := common.GetSystemConfig().GetSection("")
+	info, _ := GetSystemConfig().GetSection("")
 	response := ""
 	for k, v := range info {
 		response += k + ": " + v + "\r\n"
 	}
-	return common.GetServerRespMsg(common.MESSAGE_SUCCESS, response, nil, client)
+	return GetServerRespMsg(MESSAGE_SUCCESS, response, nil, client)
 }
 
 //后台保存gdb文件
-func HandleBgSaveCommnd(body string, client *common.Client) common.ServerRespMsg {
+func HandleBgSaveCommnd(body string, client *Client) ServerRespMsg {
 	_, resp, check := initParam(body, 0, 0)
 	if !check {
 		return resp
 	}
 	//go gdb.SaveDB()
-	return common.GetServerRespMsg(common.MESSAGE_SUCCESS, "", nil, client)
+	return GetServerRespMsg(MESSAGE_SUCCESS, "", nil, client)
 }
 
 //初始化参数
-func initParam(body string, minBodyLen int, maxBodyLen int) ([]string, common.ServerRespMsg, bool) {
+func initParam(body string, minBodyLen int, maxBodyLen int) ([]string, ServerRespMsg, bool) {
 	result := make([]string, 0)
 	if len(body) == 0 {
 		if minBodyLen != 0 {
-			return nil, common.GetServerRespMsg(common.MESSAGE_COMMAND_PARAM_ERROR, "", common.ERROR_COMMAND_PARAM_ERROR, nil), false
+			return nil, GetServerRespMsg(MESSAGE_COMMAND_PARAM_ERROR, "", ERROR_COMMAND_PARAM_ERROR, nil), false
 		}
-		return result, common.GetServerRespMsg(common.MESSAGE_SUCCESS, "", nil, nil), true
+		return result, GetServerRespMsg(MESSAGE_SUCCESS, "", nil, nil), true
 	}
 	//如果包含引号，则需要特殊处理
 	if strings.Contains(body, "\"") {
@@ -304,7 +304,7 @@ func initParam(body string, minBodyLen int, maxBodyLen int) ([]string, common.Se
 	}
 	log.Debug("初始化请求参数完成，请求参数为：", result, "，长度为：", len(result))
 	if len(result) < minBodyLen || len(result) > maxBodyLen {
-		return nil, common.GetServerRespMsg(common.MESSAGE_COMMAND_PARAM_ERROR, "", common.ERROR_COMMAND_PARAM_ERROR, nil), false
+		return nil, GetServerRespMsg(MESSAGE_COMMAND_PARAM_ERROR, "", ERROR_COMMAND_PARAM_ERROR, nil), false
 	}
-	return result, common.GetServerRespMsg(common.MESSAGE_SUCCESS, "", nil, nil), true
+	return result, GetServerRespMsg(MESSAGE_SUCCESS, "", nil, nil), true
 }

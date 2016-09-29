@@ -4,12 +4,12 @@ import (
 	"strings"
 
 	"github.com/louch2010/dhaiy/cache"
-	"github.com/louch2010/dhaiy/common"
+	. "github.com/louch2010/dhaiy/common"
 	"github.com/louch2010/dhaiy/log"
 )
 
 //解析请求
-func ParserRequest(client *common.Client) {
+func ParserRequest(client *Client) {
 	token := client.Token
 	request := client.Reqest
 	log.Debug("开始处理请求，token：", token, "，请求内容为：", request)
@@ -20,18 +20,18 @@ func ParserRequest(client *common.Client) {
 	}
 	//没有登录
 	if !isLogin {
-		openSession := common.GetSystemConfig().MustBool("client", "openSession", true)
+		openSession := GetSystemConfig().MustBool("client", "openSession", true)
 		//需要登录，而且也不是免登录的命令
 		if openSession && !IsAnonymCommnd(request[0]) {
-			client.Response = common.GetServerRespMsg(common.MESSAGE_COMMAND_NO_LOGIN, "", common.ERROR_COMMAND_NO_LOGIN, nil)
+			client.Response = GetServerRespMsg(MESSAGE_COMMAND_NO_LOGIN, "", ERROR_COMMAND_NO_LOGIN, nil)
 			log.Debug("======没登录", client.Response)
 			return
 		}
 		//模拟登录
 		if !openSession {
-			table := common.GetSystemConfig().MustValue("table", "default", common.DEFAULT_TABLE_NAME)
+			table := GetSystemConfig().MustValue("table", "default", DEFAULT_TABLE_NAME)
 			cacheTable, _ := cache.Cache(table)
-			client = &common.Client{
+			client = &Client{
 				Table:      table,
 				CacheTable: cacheTable,
 				Token:      token,
@@ -45,7 +45,7 @@ func ParserRequest(client *common.Client) {
 
 //判断是否为免登录命令
 func IsAnonymCommnd(commnd string) bool {
-	anonymCommnd := common.SystemConfigFile.MustValue("server", "anonymCommnd", "ping,connect,exit,help")
+	anonymCommnd := SystemConfigFile.MustValue("server", "anonymCommnd", "ping,connect,exit,help")
 	list := strings.Split(strings.ToUpper(anonymCommnd), ",")
 	for _, c := range list {
 		if commnd == c {
@@ -56,12 +56,12 @@ func IsAnonymCommnd(commnd string) bool {
 }
 
 //获取会话
-func GetSession(token string) (*common.Client, bool) {
+func GetSession(token string) (*Client, bool) {
 	table, _ := cache.GetSysTable()
 	item := table.Get(token)
 	if item == nil {
-		return &common.Client{}, false
+		return &Client{}, false
 	}
-	value, falg := item.Value().(common.Client)
+	value, falg := item.Value().(Client)
 	return &value, falg
 }

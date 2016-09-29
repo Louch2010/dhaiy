@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/louch2010/dhaiy/common"
+	. "github.com/louch2010/dhaiy/common"
 	"github.com/louch2010/dhaiy/log"
 	"github.com/louch2010/goutil"
 )
@@ -22,7 +22,7 @@ var serverStatusFlag bool = false
 func StartServer(port int, timeout int, connectType string) error {
 	if serverStatusFlag {
 		log.Error("服务已经在运行，无需再次启动")
-		return common.ERROR_SERVER_ALREADY_START
+		return ERROR_SERVER_ALREADY_START
 	}
 	serverStatusFlag = true
 	log.Info("启动服务，端口号：", port, "，连接超时时间：", timeout)
@@ -57,7 +57,7 @@ func StartServer(port int, timeout int, connectType string) error {
 			go handleShortConn(conn, timeout, token)
 		} else {
 			log.Error("非法的服务器配置，连接类型：", connectType)
-			return common.ERROR_SERVER_CONNECT_TYPE
+			return ERROR_SERVER_CONNECT_TYPE
 		}
 	}
 	log.Info("服务已停止！")
@@ -76,13 +76,13 @@ func handleShortConn(conn net.Conn, timeout int, token string) {
 	conn.SetDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
 	//将请求读入缓存，并读取其中的一行
 	buff := bufio.NewReader(conn)
-	line, _ := buff.ReadString(common.FLAG_CHAR_SOCKET_COMMND_END)
+	line, _ := buff.ReadString(FLAG_CHAR_SOCKET_COMMND_END)
 	//解析请求并响应
-	client := &common.Client{}
+	client := &Client{}
 	client.Reqest = splitParam(line)
 	ParserRequest(client)
 	response := client.Response
-	conn.Write([]byte(common.TransferResponse(response)))
+	conn.Write([]byte(TransferResponse(response)))
 	log.Debug("请求处理完成，响应状态为：", response.Code, "响应内容为：", response.Data)
 	conn.Close()
 }
@@ -91,12 +91,12 @@ func handleShortConn(conn net.Conn, timeout int, token string) {
 func handleLongConn(conn net.Conn, timeout int, token string) {
 	log.Debug("开始处理长连接请求...")
 	//客户端信息
-	client := &common.Client{}
+	client := &Client{}
 	for {
 		//将请求内容写入buff
 		buff := bufio.NewReader(conn)
 		//只读取一行内容
-		line, err := buff.ReadString(common.FLAG_CHAR_SOCKET_COMMND_END)
+		line, err := buff.ReadString(FLAG_CHAR_SOCKET_COMMND_END)
 		if err != nil {
 			if err == io.EOF {
 				log.Info("连接已关闭！")
@@ -114,11 +114,11 @@ func handleLongConn(conn net.Conn, timeout int, token string) {
 		//解析请求
 		client.Token = token
 		client.Reqest = splitParam(line)
-		client.Response = common.ServerRespMsg{} //将response置为空
+		client.Response = ServerRespMsg{} //将response置为空
 		//请求内容为空时，不处理
 		if len(client.Reqest) == 0 {
 			log.Debug("请求内容为空，不处理")
-			client.Response = common.GetServerRespMsg(common.MESSAGE_SUCCESS, "", nil, client)
+			client.Response = GetServerRespMsg(MESSAGE_SUCCESS, "", nil, client)
 		} else {
 			log.Debug("======响应1：", client.Response)
 			ParserRequest(client) //处理
@@ -131,7 +131,7 @@ func handleLongConn(conn net.Conn, timeout int, token string) {
 			client = response.Client
 		}
 		//响应
-		data := common.TransferResponse(response)
+		data := TransferResponse(response)
 		io.WriteString(conn, data)
 		if response.Clo {
 			conn.Close()
