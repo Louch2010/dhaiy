@@ -188,6 +188,8 @@ func splitParam(body string) []string {
 			i = i + 1
 		}
 	} else {
+		body = strings.Replace(body, "   ", " ", 99)
+		body = strings.Replace(body, "  ", " ", 99)
 		body = strings.Replace(body, "  ", " ", 99)
 		result = strings.Split(body, " ")
 	}
