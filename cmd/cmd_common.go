@@ -1,13 +1,12 @@
 package cmd
 
 import (
-	"container/list"
 	"strconv"
 	"strings"
 
 	"github.com/louch2010/dhaiy/cache"
 	. "github.com/louch2010/dhaiy/common"
-	//"github.com/louch2010/dhaiy/gdb"
+	"github.com/louch2010/dhaiy/gdb"
 	"github.com/louch2010/dhaiy/log"
 	"github.com/louch2010/goutil"
 )
@@ -20,14 +19,15 @@ func HandlePingCommnd(client *Client) {
 //帮助命令处理
 func HandleHelpCommnd(client *Client) {
 	response := ""
+	args := client.Reqest[1:]
 	help := GetHelpConfig()
-	if len(client.Reqest) == 0 { //没有请求体，则显示所有命令名称
+	if len(args) == 0 { //没有请求体，则显示所有命令名称
 		for index, sec := range help.GetSectionList() {
 			response += "[" + strconv.Itoa(index+1) + "] " + sec + "\r\n"
 		}
 		response += "use 'help commnd' to see detail info"
 	} else {
-		cmd := strings.ToLower(client.Reqest[1])
+		cmd := strings.ToLower(args[0])
 		sec, err := help.GetSection(cmd)
 		if err != nil {
 			response = "no help for the commnd"
@@ -43,6 +43,7 @@ func HandleHelpCommnd(client *Client) {
 
 //连接命令处理connect [-t'table'] [-a'pwd'] [-i'ip'] [-p'port'] [-e'e1,e2...']
 func HandleConnectCommnd(client *Client) {
+	log.Debug("处理connect请求")
 	table := GetSystemConfig().MustValue("table", "default", DEFAULT_TABLE_NAME)
 	token := client.Token
 	var pwd, ip, port, event, protocol string
@@ -114,7 +115,7 @@ func HandleConnectCommnd(client *Client) {
 		return
 	}
 	//存储连接信息
-	client = &Client{
+	*client = Client{
 		Host:        ip,
 		Port:        portInt,
 		Table:       table,
@@ -122,6 +123,7 @@ func HandleConnectCommnd(client *Client) {
 		ListenEvent: strings.Split(event, ","),
 		Protocol:    protocol,
 		Token:       token,
+		IsLogin:     true,
 	}
 	CreateSession(token, client)
 	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, token, nil, client)
@@ -138,44 +140,35 @@ func HandleDeleteCommnd(client *Client) {
 }
 
 //Exist命令处理
-func HandleExistCommnd(body string, client *Client) ServerRespMsg {
-	//请求体校验
-	args, resp, check := initParam(body, 1, 1)
-	if !check {
-		return resp
-	}
-	response := GetServerRespMsg(MESSAGE_SUCCESS, client.CacheTable.IsExist(args[0]), nil, client)
+func HandleExistCommnd(client *Client) {
+	arg := client.Reqest[1]
+	response := GetServerRespMsg(MESSAGE_SUCCESS, client.CacheTable.IsExist(arg), nil, client)
 	response.DataType = DATA_TYPE_BOOL
-	return response
+	client.Response = response
 }
 
 //切换表
-func HandleUseCommnd(body string, client *Client) ServerRespMsg {
-	//请求体校验
-	args, resp, check := initParam(body, 1, 1)
-	if !check {
-		return resp
-	}
-	cacheTable, err := cache.Cache(args[0])
+func HandleUseCommnd(client *Client) {
+	arg := client.Reqest[1]
+	cacheTable, err := cache.Cache(arg)
 	if err != nil {
 		log.Error("切换表时获取表失败！", err)
-		return GetServerRespMsg(MESSAGE_ERROR, "", ERROR_SYSTEM, nil)
+		client.Response = GetServerRespMsg(MESSAGE_ERROR, "", ERROR_SYSTEM, nil)
+		return
 	}
-	client.Table = args[0]
+	client.Table = arg
 	client.CacheTable = cacheTable
 	if CreateSession(client.Token, client) {
-		return GetServerRespMsg(MESSAGE_SUCCESS, "", nil, client)
+		client.Response = GetServerRespMsg(MESSAGE_SUCCESS, "", nil, client)
+		return
 	}
-	return GetServerRespMsg(MESSAGE_ERROR, "", ERROR_SYSTEM, client)
+	client.Response = GetServerRespMsg(MESSAGE_ERROR, "", ERROR_SYSTEM, client)
 }
 
 //显示表信息
-func HandleShowtCommnd(body string, client *Client) ServerRespMsg {
+func HandleShowtCommnd(client *Client) {
 	response := ""
-	args, resp, check := initParam(body, 0, 1)
-	if !check {
-		return resp
-	}
+	args := client.Reqest[1:]
 	if len(args) == 0 { //没有请求体，则显示所有表名
 		list := cache.GetCacheTables()
 		index := 1
@@ -192,7 +185,8 @@ func HandleShowtCommnd(body string, client *Client) ServerRespMsg {
 	} else {
 		table, ok := cache.GetCacheTable(args[0])
 		if !ok {
-			return GetServerRespMsg(MESSAGE_TABLE_NOT_EXIST, response, ERROR_TABLE_NOT_EXIST, client)
+			client.Response = GetServerRespMsg(MESSAGE_TABLE_NOT_EXIST, response, ERROR_TABLE_NOT_EXIST, client)
+			return
 		}
 		response += "name:" + table.Name() + "\r\n"
 		response += "itemCount: " + strconv.Itoa(table.ItemCount()) + "\r\n"
@@ -201,17 +195,14 @@ func HandleShowtCommnd(body string, client *Client) ServerRespMsg {
 		response += "lastModifyTime: " + goutil.DateUtil().TimeFullFormat(table.LastModifyTime()) + "\r\n"
 		response += "accessCount: " + strconv.FormatInt(table.AccessCount(), 10)
 	}
-	return GetServerRespMsg(MESSAGE_SUCCESS, response, nil, client)
+	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, response, nil, client)
 }
 
 //显示项信息
-func HandleShowiCommnd(body string, client *Client) ServerRespMsg {
+func HandleShowiCommnd(client *Client) {
 	response := ""
 	table, _ := cache.Cache(client.Table)
-	args, resp, check := initParam(body, 0, 1)
-	if !check {
-		return resp
-	}
+	args := client.Reqest[1:]
 	if len(args) == 0 { //没有请求体，则显示所有项
 		index := 1
 		for k, _ := range table.GetItems() {
@@ -222,7 +213,8 @@ func HandleShowiCommnd(body string, client *Client) ServerRespMsg {
 	} else {
 		item := table.Get(args[0])
 		if item == nil {
-			return GetServerRespMsg(MESSAGE_ITEM_NOT_EXIST, "", ERROR_ITEM_NOT_EXIST, client)
+			client.Response = GetServerRespMsg(MESSAGE_ITEM_NOT_EXIST, "", ERROR_ITEM_NOT_EXIST, client)
+			return
 		}
 		response += "key: " + item.Key() + "\r\n"
 		//response += "value: " + toString(item) + "\r\n"
@@ -232,79 +224,38 @@ func HandleShowiCommnd(body string, client *Client) ServerRespMsg {
 		response += "accessCount: " + strconv.FormatInt(item.AccessCount(), 10) + "\r\n"
 		response += "dataType: " + item.DataType() + "\r\n"
 	}
-	return GetServerRespMsg(MESSAGE_SUCCESS, response, nil, client)
+	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, response, nil, client)
 }
 
 //服务器信息
-func HandleInfoCommnd(body string, client *Client) ServerRespMsg {
-	_, resp, check := initParam(body, 0, 0)
-	if !check {
-		return resp
-	}
+func HandleInfoCommnd(client *Client) {
 	//获取默认section中的信息
 	info, _ := GetSystemConfig().GetSection("")
 	response := ""
 	for k, v := range info {
 		response += k + ": " + v + "\r\n"
 	}
-	return GetServerRespMsg(MESSAGE_SUCCESS, response, nil, client)
+	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, response, nil, client)
 }
 
 //后台保存gdb文件
-func HandleBgSaveCommnd(body string, client *Client) ServerRespMsg {
-	_, resp, check := initParam(body, 0, 0)
-	if !check {
-		return resp
-	}
-	//go gdb.SaveDB()
-	return GetServerRespMsg(MESSAGE_SUCCESS, "", nil, client)
+func HandleBgSaveCommnd(client *Client) {
+	go gdb.SaveDB()
+	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, "", nil, client)
 }
 
-//初始化参数
-func initParam(body string, minBodyLen int, maxBodyLen int) ([]string, ServerRespMsg, bool) {
-	result := make([]string, 0)
-	if len(body) == 0 {
-		if minBodyLen != 0 {
-			return nil, GetServerRespMsg(MESSAGE_COMMAND_PARAM_ERROR, "", ERROR_COMMAND_PARAM_ERROR, nil), false
-		}
-		return result, GetServerRespMsg(MESSAGE_SUCCESS, "", nil, nil), true
-	}
-	//如果包含引号，则需要特殊处理
-	if strings.Contains(body, "\"") {
-		l := list.New()
-		open := false
-		buffer := ""
-		for _, c := range body {
-			if '"' == c {
-				if open {
-					l.PushBack(buffer)
-					buffer = ""
-				}
-				open = !open
-				continue
-			}
-			if ' ' == c && !open {
-				if len(buffer) > 0 {
-					l.PushBack(buffer)
-					buffer = ""
-				}
-				continue
-			}
-			buffer += string(c)
-		}
-		result = make([]string, l.Len())
-		var i = 0
-		for e := l.Front(); e != nil; e = e.Next() {
-			result[i] = e.Value.(string)
-			i = i + 1
-		}
-	} else {
-		body = strings.Replace(body, "  ", " ", 99)
-		result = strings.Split(body, " ")
-	}
-	log.Debug("初始化请求参数完成，请求参数为：", result, "，长度为：", len(result))
-	if len(result) < minBodyLen || len(result) > maxBodyLen {
-		return nil, GetServerRespMsg(MESSAGE_COMMAND_PARAM_ERROR, "", ERROR_COMMAND_PARAM_ERROR, nil), false
-	}
-	return result, GetServerRespMsg(MESSAGE_SUCCESS, "", nil, nil), true
+//创建会话
+func CreateSession(token string, c *Client) bool {
+	//缓存登录信息
+	table, _ := cache.GetSysTable()
+	table.Set(token, c, 0, DATA_TYPE_OBJECT)
+	//创建表信息
+	cache.Cache(c.Table)
+	return true
+}
+
+//销毁会话
+func DestroySession(token string) bool {
+	table, _ := cache.GetSysTable()
+	return table.Delete(token)
 }

@@ -20,4 +20,9 @@ var (
 	ERROR_PROTOCOL_ERROR           = errors.New("protocol error")
 	ERROR_SYSTEM                   = errors.New("system error")
 	ERROR_COMMAND_NOT_SUPPORT_DATA = errors.New("command not support for the data type")
+
+	GDB_FILE_INVALID       = errors.New("invalid gdb file")
+	GDB_FILE_VERSION_ERROR = errors.New("gdb file version is not support")
+	GDB_FILE_CHECK_ERROR   = errors.New("gdb file is broken")
+	GDB_FILE_FORMAT_ERROR  = errors.New("error gdb file format")
 )

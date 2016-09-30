@@ -9,94 +9,80 @@ import (
 )
 
 //Set命令处理
-func HandleSetCommnd(body string, client *Client) ServerRespMsg {
-	//请求体校验
-	args, resp, check := initParam(body, 2, 3)
-	if !check {
-		return resp
-	}
+func HandleSetCommnd(client *Client) {
+	args := client.Reqest[1:]
 	var liveTime int = 0
 	if len(args) == 3 {
 		t, err := strconv.Atoi(args[2])
 		if err != nil {
 			log.Info("参数转换错误，liveTime：", args[2], err)
-			return GetServerRespMsg(MESSAGE_COMMAND_PARAM_ERROR, "", ERROR_COMMAND_PARAM_ERROR, client)
+			client.Response = GetServerRespMsg(MESSAGE_COMMAND_PARAM_ERROR, "", ERROR_COMMAND_PARAM_ERROR, client)
+			return
 		}
 		liveTime = t
 	}
 	//增加缓存项
 	item := client.CacheTable.Set(args[0], args[1], time.Duration(liveTime)*time.Second, DATA_TYPE_STRING)
-	return GetServerRespMsg(MESSAGE_SUCCESS, item, nil, client)
+	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, item, nil, client)
 }
 
 //Get命令处理
-func HandleGetCommnd(body string, client *Client) ServerRespMsg {
-	//请求体校验
-	args, resp, check := initParam(body, 1, 1)
-	if !check {
-		return resp
-	}
+func HandleGetCommnd(client *Client) {
+	args := client.Reqest[1:]
 	item := client.CacheTable.Get(args[0])
 	if item == nil {
-		return GetServerRespMsg(MESSAGE_ITEM_NOT_EXIST, "", ERROR_ITEM_NOT_EXIST, client)
+		client.Response = GetServerRespMsg(MESSAGE_ITEM_NOT_EXIST, "", ERROR_ITEM_NOT_EXIST, client)
+		return
 	}
 	//数据类型校验
 	if item.DataType() != DATA_TYPE_STRING {
-		return GetServerRespMsg(MESSAGE_COMMAND_NOT_SUPPORT_DATA, "", ERROR_COMMAND_NOT_SUPPORT_DATA, client)
+		client.Response = GetServerRespMsg(MESSAGE_COMMAND_NOT_SUPPORT_DATA, "", ERROR_COMMAND_NOT_SUPPORT_DATA, client)
+		return
 	}
-	return GetServerRespMsg(MESSAGE_SUCCESS, item.Value(), nil, client)
+	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, item.Value(), nil, client)
 }
 
 //Append命令处理
-func HandleAppendCommnd(body string, client *Client) ServerRespMsg {
-	//请求体校验
-	args, resp, check := initParam(body, 2, 2)
-	if !check {
-		return resp
-	}
+func HandleAppendCommnd(client *Client) {
+	args := client.Reqest[1:]
 	item := client.CacheTable.Get(args[0])
 	//不存在，则设置
 	if item == nil {
 		client.CacheTable.Set(args[0], args[1], 0, DATA_TYPE_STRING)
-		return GetServerRespMsg(MESSAGE_SUCCESS, args[1], nil, client)
+		client.Response = GetServerRespMsg(MESSAGE_SUCCESS, args[1], nil, client)
+		return
 	}
 	//数据类型校验
 	if item.DataType() != DATA_TYPE_STRING {
-		return GetServerRespMsg(MESSAGE_COMMAND_NOT_SUPPORT_DATA, "", ERROR_COMMAND_NOT_SUPPORT_DATA, client)
+		client.Response = GetServerRespMsg(MESSAGE_COMMAND_NOT_SUPPORT_DATA, "", ERROR_COMMAND_NOT_SUPPORT_DATA, client)
+		return
 	}
 	v := item.Value().(string) + args[1]
 	item.SetValue(v)
-	return GetServerRespMsg(MESSAGE_SUCCESS, v, nil, client)
+	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, v, nil, client)
 }
 
 //StrLen命令处理
-func HandleStrLenCommnd(body string, client *Client) ServerRespMsg {
-	//请求体校验
-	args, resp, check := initParam(body, 1, 1)
-	if !check {
-		return resp
-	}
+func HandleStrLenCommnd(client *Client) {
+	args := client.Reqest[1:]
 	item := client.CacheTable.Get(args[0])
 	length := 0
 	if item != nil {
 		//数据类型校验
 		if item.DataType() != DATA_TYPE_STRING {
-			return GetServerRespMsg(MESSAGE_COMMAND_NOT_SUPPORT_DATA, "", ERROR_COMMAND_NOT_SUPPORT_DATA, client)
+			client.Response = GetServerRespMsg(MESSAGE_COMMAND_NOT_SUPPORT_DATA, "", ERROR_COMMAND_NOT_SUPPORT_DATA, client)
+			return
 		}
 		length = len(item.Value().(string))
 	}
 	response := GetServerRespMsg(MESSAGE_SUCCESS, length, nil, client)
 	response.DataType = DATA_TYPE_NUMBER
-	return response
+	client.Response = response
 }
 
 //SetNx命令处理
-func HandleSetNxCommnd(body string, client *Client) ServerRespMsg {
-	//请求体校验
-	args, resp, check := initParam(body, 2, 2)
-	if !check {
-		return resp
-	}
+func HandleSetNxCommnd(client *Client) {
+	args := client.Reqest[1:]
 	item := client.CacheTable.Get(args[0])
 	flag := false
 	//不存在，则设置
@@ -106,5 +92,5 @@ func HandleSetNxCommnd(body string, client *Client) ServerRespMsg {
 	}
 	response := GetServerRespMsg(MESSAGE_SUCCESS, flag, nil, client)
 	response.DataType = DATA_TYPE_BOOL
-	return response
+	client.Response = response
 }

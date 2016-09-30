@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/louch2010/dhaiy/cache"
+	"github.com/louch2010/dhaiy/cmd"
 	. "github.com/louch2010/dhaiy/common"
 	"github.com/louch2010/dhaiy/log"
 )
@@ -14,17 +15,15 @@ func ParserRequest(client *Client) {
 	request := client.Reqest
 	log.Debug("开始处理请求，token：", token, "，请求内容为：", request)
 	//会话信息校验
-	isLogin := false
 	if !client.IsLogin {
-		client, isLogin = GetSession(token) //尝试从cache中获取客户端信息
+		GetSession(client) //尝试从cache中获取客户端信息
 	}
 	//没有登录
-	if !isLogin {
+	if !client.IsLogin {
 		openSession := GetSystemConfig().MustBool("client", "openSession", true)
 		//需要登录，而且也不是免登录的命令
 		if openSession && !IsAnonymCommnd(request[0]) {
-			client.Response = GetServerRespMsg(MESSAGE_COMMAND_NO_LOGIN, "", ERROR_COMMAND_NO_LOGIN, nil)
-			log.Debug("======没登录", client.Response)
+			client.Response = GetServerRespMsg(MESSAGE_COMMAND_NO_LOGIN, "", ERROR_COMMAND_NO_LOGIN, client)
 			return
 		}
 		//模拟登录
@@ -39,14 +38,27 @@ func ParserRequest(client *Client) {
 			}
 		}
 	}
-	log.Debug("会话信息：", *client)
-	log.Debug("请求信息：", client.Reqest)
+	//获取请求
+	command := cmd.GetCmd(request[0])
+	if command == nil {
+		log.Debug("请求命令不存在：", request[0])
+		client.Response = GetServerRespMsg(MESSAGE_COMMAND_NOT_FOUND, "", ERROR_COMMAND_NOT_FOUND, client)
+		return
+	}
+	//请求校验
+	if len(request)-1 < command.MinParam || len(request)-1 > command.MaxParam {
+		log.Debug("命令参数个数错误！最大参数个数：", command.MaxParam, "，最小参数个数：", command.MinParam)
+		client.Response = GetServerRespMsg(MESSAGE_COMMAND_PARAM_ERROR, "", ERROR_COMMAND_PARAM_ERROR, client)
+		return
+	}
+	//处理请求
+	command.HandlerFunc(client)
 }
 
 //判断是否为免登录命令
 func IsAnonymCommnd(commnd string) bool {
 	anonymCommnd := SystemConfigFile.MustValue("server", "anonymCommnd", "ping,connect,exit,help")
-	list := strings.Split(strings.ToUpper(anonymCommnd), ",")
+	list := strings.Split(anonymCommnd, ",")
 	for _, c := range list {
 		if commnd == c {
 			return true
@@ -56,12 +68,14 @@ func IsAnonymCommnd(commnd string) bool {
 }
 
 //获取会话
-func GetSession(token string) (*Client, bool) {
+func GetSession(client *Client) {
+	token := client.Token
 	table, _ := cache.GetSysTable()
 	item := table.Get(token)
 	if item == nil {
-		return &Client{}, false
+		return
 	}
-	value, falg := item.Value().(Client)
-	return &value, falg
+	value, _ := item.Value().(Client)
+	//复制
+	*client = value
 }

@@ -79,6 +79,56 @@ const (
 	FLAG_CHAR_SOCKET_JSON_RESPONSE_END     = "\r\n!--!>"
 )
 
+const (
+	GDB_GOCACHE         = "GOCACHE"
+	GDB_VERSION         = "0001"
+	GDB_DATABASE        = "DATABASE"
+	GDB_TABLE           = "TABLE"
+	GDB_EOF             = "EOF"
+	GDB_LIVETIME_ALWAYS = "A"
+)
+
+const (
+	//魔数长度
+	GDB_LEN_GOCACHE = 7
+	//版本号长度
+	GDB_LEN_VERSION = 4
+	//库标识长度
+	GDB_LEN_DATABASE = 8
+	//表标识长度
+	GDB_LEN_TABLE = 5
+	//结束符长度
+	GDB_LEN_EOF = 3
+	//校验码长度
+	GDB_LEN_CHECK_SUM = 32
+	//库大小长度
+	GDB_LEN_DATABASE_SIZE = 4
+	//表大小长度
+	GDB_LEN_TABLE_SIZE = 8
+	//键长度，包括表名、键名
+	GDB_LEN_KEY = 3
+	//值长度
+	LEN_VALUE = 6
+	//数据类型长度
+	GDB_LEN_DATATYPE = 1
+	//存活时间长度
+	GDB_LEN_LIVETIME = 14
+	//永久存活时间长度
+	GDB_LEN_LIVETIME_ALWAYS = 1
+)
+
+//数据类型
+const (
+	GDB_TYPE_STRING = "1" //字符
+	GDB_TYPE_BOOL   = "2" //布尔
+	GDB_TYPE_NUMBER = "3" //数字
+	GDB_TYPE_MAP    = "4" //Map
+	GDB_TYPE_SET    = "5" //集合
+	GDB_TYPE_LIST   = "6" //列表
+	GDB_TYPE_ZSET   = "7" //有序集合
+	GDB_TYPE_OBJECT = "8" //对象
+)
+
 //帮助
 const CONFIG_HELP_CONTENT_EN = `
 [connect]

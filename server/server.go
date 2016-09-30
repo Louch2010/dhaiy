@@ -114,23 +114,16 @@ func handleLongConn(conn net.Conn, timeout int, token string) {
 		//解析请求
 		client.Token = token
 		client.Reqest = splitParam(line)
-		client.Response = ServerRespMsg{} //将response置为空
+		client.Response = nil //将response置为空
 		//请求内容为空时，不处理
 		if len(client.Reqest) == 0 {
 			log.Debug("请求内容为空，不处理")
 			client.Response = GetServerRespMsg(MESSAGE_SUCCESS, "", nil, client)
 		} else {
-			log.Debug("======响应1：", client.Response)
 			ParserRequest(client) //处理
-			log.Debug("======响应2：", client.Response)
-		}
-		response := client.Response
-		//将client进行缓存
-		if response.Err == nil && response.Client != nil {
-			log.Debug("======缓存客户端信息：", response)
-			client = response.Client
 		}
 		//响应
+		response := client.Response
 		data := TransferResponse(response)
 		io.WriteString(conn, data)
 		if response.Clo {
