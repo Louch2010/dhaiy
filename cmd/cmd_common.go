@@ -12,12 +12,12 @@ import (
 )
 
 //ping命令处理
-func HandlePingCommnd(client *Client) {
-	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, MESSAGE_PONG, nil, client)
+func HandlePingCommand(client *Client) {
+	client.Response = GetCmdResponse(MESSAGE_SUCCESS, MESSAGE_PONG, nil, client)
 }
 
 //帮助命令处理
-func HandleHelpCommnd(client *Client) {
+func HandleHelpCommand(client *Client) {
 	response := ""
 	args := client.Reqest[1:]
 	help := GetHelpConfig()
@@ -27,22 +27,27 @@ func HandleHelpCommnd(client *Client) {
 		}
 		response += "use 'help commnd' to see detail info"
 	} else {
-		cmd := strings.ToLower(args[0])
-		sec, err := help.GetSection(cmd)
+		sec, err := help.GetSection(args[0])
 		if err != nil {
 			response = "no help for the commnd"
 		} else {
-			response += "[" + cmd + "]\r\n"
+			response += "[" + args[0] + "]\r\n"
 			for k, v := range sec {
 				response += k + ": " + v + "\r\n"
 			}
+			//显示调用信息
+			cmd := GetCmd(args[0])
+			response += "MinParam: " + strconv.Itoa(cmd.MinParam) + "\r\n"
+			response += "MaxParam: " + strconv.Itoa(cmd.MaxParam) + "\r\n"
+			response += "IsWrite: " + strconv.FormatBool(cmd.IsWrite) + "\r\n"
+			response += "InvokeCount: " + strconv.FormatInt(cmd.InvokeCount, 10)
 		}
 	}
-	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, response, nil, client)
+	client.Response = GetCmdResponse(MESSAGE_SUCCESS, response, nil, client)
 }
 
 //连接命令处理connect [-t'table'] [-a'pwd'] [-i'ip'] [-p'port'] [-e'e1,e2...']
-func HandleConnectCommnd(client *Client) {
+func HandleConnectCommand(client *Client) {
 	log.Debug("处理connect请求")
 	table := GetSystemConfig().MustValue("table", "default", DEFAULT_TABLE_NAME)
 	token := client.Token
@@ -82,11 +87,11 @@ func HandleConnectCommnd(client *Client) {
 	syspwd := GetSystemConfig().MustValue("server", "password", "")
 	if len(syspwd) > 0 {
 		if len(pwd) == 0 {
-			client.Response = GetServerRespMsg(MESSAGE_NO_PWD, "", ERROR_AUTHORITY_NO_PWD, nil)
+			client.Response = GetCmdResponse(MESSAGE_NO_PWD, "", ERROR_AUTHORITY_NO_PWD, nil)
 			return
 		}
 		if syspwd != pwd {
-			client.Response = GetServerRespMsg(MESSAGE_PWD_ERROR, "", ERROR_AUTHORITY_PWD_ERROR, nil)
+			client.Response = GetCmdResponse(MESSAGE_PWD_ERROR, "", ERROR_AUTHORITY_PWD_ERROR, nil)
 			return
 		}
 	}
@@ -96,7 +101,7 @@ func HandleConnectCommnd(client *Client) {
 		p, err := strconv.Atoi(port)
 		if err != nil {
 			log.Info("端口转换错误，", err)
-			client.Response = GetServerRespMsg(MESSAGE_PORT_ERROR, "", ERROR_PORT_ERROR, nil)
+			client.Response = GetCmdResponse(MESSAGE_PORT_ERROR, "", ERROR_PORT_ERROR, nil)
 			return
 		}
 		portInt = p
@@ -104,14 +109,14 @@ func HandleConnectCommnd(client *Client) {
 	//协议校验
 	if len(protocol) > 0 && protocol != PROTOCOL_RESPONSE_JSON && protocol != PROTOCOL_RESPONSE_TERMINAL {
 		log.Info("协议错误：", protocol)
-		client.Response = GetServerRespMsg(MESSAGE_PROTOCOL_ERROR, "", ERROR_PROTOCOL_ERROR, nil)
+		client.Response = GetCmdResponse(MESSAGE_PROTOCOL_ERROR, "", ERROR_PROTOCOL_ERROR, nil)
 		return
 	}
 	//获取表
 	cacheTable, err := cache.Cache(table)
 	if err != nil {
 		log.Error("连接时获取表失败！", err)
-		client.Response = GetServerRespMsg(MESSAGE_ERROR, "", ERROR_SYSTEM, nil)
+		client.Response = GetCmdResponse(MESSAGE_ERROR, "", ERROR_SYSTEM, nil)
 		return
 	}
 	//存储连接信息
@@ -126,47 +131,54 @@ func HandleConnectCommnd(client *Client) {
 		IsLogin:     true,
 	}
 	CreateSession(token, client)
-	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, token, nil, client)
+	client.Response = GetCmdResponse(MESSAGE_SUCCESS, token, nil, client)
+}
+
+//Exit命令处理
+func HandleExitCommand(client *Client) {
+	DestroySession(client.Token)
+	client.Response = GetCmdResponse(MESSAGE_SUCCESS, "", nil, client)
+	client.Response.Clo = true
 }
 
 //Delete命令处理
-func HandleDeleteCommnd(client *Client) {
+func HandleDelCommand(client *Client) {
 	request := client.Reqest
 	if client.CacheTable.Delete(request[1]) {
-		client.Response = GetServerRespMsg(MESSAGE_SUCCESS, "", nil, client)
+		client.Response = GetCmdResponse(MESSAGE_SUCCESS, "", nil, client)
 		return
 	}
-	client.Response = GetServerRespMsg(MESSAGE_ITEM_NOT_EXIST, "", ERROR_ITEM_NOT_EXIST, client)
+	client.Response = GetCmdResponse(MESSAGE_ITEM_NOT_EXIST, "", ERROR_ITEM_NOT_EXIST, client)
 }
 
 //Exist命令处理
-func HandleExistCommnd(client *Client) {
+func HandleExistCommand(client *Client) {
 	arg := client.Reqest[1]
-	response := GetServerRespMsg(MESSAGE_SUCCESS, client.CacheTable.IsExist(arg), nil, client)
+	response := GetCmdResponse(MESSAGE_SUCCESS, client.CacheTable.IsExist(arg), nil, client)
 	response.DataType = DATA_TYPE_BOOL
 	client.Response = response
 }
 
 //切换表
-func HandleUseCommnd(client *Client) {
+func HandleUseCommand(client *Client) {
 	arg := client.Reqest[1]
 	cacheTable, err := cache.Cache(arg)
 	if err != nil {
 		log.Error("切换表时获取表失败！", err)
-		client.Response = GetServerRespMsg(MESSAGE_ERROR, "", ERROR_SYSTEM, nil)
+		client.Response = GetCmdResponse(MESSAGE_ERROR, "", ERROR_SYSTEM, nil)
 		return
 	}
 	client.Table = arg
 	client.CacheTable = cacheTable
 	if CreateSession(client.Token, client) {
-		client.Response = GetServerRespMsg(MESSAGE_SUCCESS, "", nil, client)
+		client.Response = GetCmdResponse(MESSAGE_SUCCESS, "", nil, client)
 		return
 	}
-	client.Response = GetServerRespMsg(MESSAGE_ERROR, "", ERROR_SYSTEM, client)
+	client.Response = GetCmdResponse(MESSAGE_ERROR, "", ERROR_SYSTEM, client)
 }
 
 //显示表信息
-func HandleShowtCommnd(client *Client) {
+func HandleShowtCommand(client *Client) {
 	response := ""
 	args := client.Reqest[1:]
 	if len(args) == 0 { //没有请求体，则显示所有表名
@@ -185,7 +197,7 @@ func HandleShowtCommnd(client *Client) {
 	} else {
 		table, ok := cache.GetCacheTable(args[0])
 		if !ok {
-			client.Response = GetServerRespMsg(MESSAGE_TABLE_NOT_EXIST, response, ERROR_TABLE_NOT_EXIST, client)
+			client.Response = GetCmdResponse(MESSAGE_TABLE_NOT_EXIST, response, ERROR_TABLE_NOT_EXIST, client)
 			return
 		}
 		response += "name:" + table.Name() + "\r\n"
@@ -195,11 +207,11 @@ func HandleShowtCommnd(client *Client) {
 		response += "lastModifyTime: " + goutil.DateUtil().TimeFullFormat(table.LastModifyTime()) + "\r\n"
 		response += "accessCount: " + strconv.FormatInt(table.AccessCount(), 10)
 	}
-	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, response, nil, client)
+	client.Response = GetCmdResponse(MESSAGE_SUCCESS, response, nil, client)
 }
 
 //显示项信息
-func HandleShowiCommnd(client *Client) {
+func HandleShowiCommand(client *Client) {
 	response := ""
 	table, _ := cache.Cache(client.Table)
 	args := client.Reqest[1:]
@@ -213,7 +225,7 @@ func HandleShowiCommnd(client *Client) {
 	} else {
 		item := table.Get(args[0])
 		if item == nil {
-			client.Response = GetServerRespMsg(MESSAGE_ITEM_NOT_EXIST, "", ERROR_ITEM_NOT_EXIST, client)
+			client.Response = GetCmdResponse(MESSAGE_ITEM_NOT_EXIST, "", ERROR_ITEM_NOT_EXIST, client)
 			return
 		}
 		response += "key: " + item.Key() + "\r\n"
@@ -224,24 +236,24 @@ func HandleShowiCommnd(client *Client) {
 		response += "accessCount: " + strconv.FormatInt(item.AccessCount(), 10) + "\r\n"
 		response += "dataType: " + item.DataType() + "\r\n"
 	}
-	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, response, nil, client)
+	client.Response = GetCmdResponse(MESSAGE_SUCCESS, response, nil, client)
 }
 
 //服务器信息
-func HandleInfoCommnd(client *Client) {
+func HandleInfoCommand(client *Client) {
 	//获取默认section中的信息
 	info, _ := GetSystemConfig().GetSection("")
 	response := ""
 	for k, v := range info {
 		response += k + ": " + v + "\r\n"
 	}
-	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, response, nil, client)
+	client.Response = GetCmdResponse(MESSAGE_SUCCESS, response, nil, client)
 }
 
 //后台保存gdb文件
-func HandleBgSaveCommnd(client *Client) {
+func HandleBgSaveCommand(client *Client) {
 	go gdb.SaveDB()
-	client.Response = GetServerRespMsg(MESSAGE_SUCCESS, "", nil, client)
+	client.Response = GetCmdResponse(MESSAGE_SUCCESS, "", nil, client)
 }
 
 //创建会话

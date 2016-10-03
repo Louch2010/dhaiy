@@ -23,7 +23,7 @@ func ParserRequest(client *Client) {
 		openSession := GetSystemConfig().MustBool("client", "openSession", true)
 		//需要登录，而且也不是免登录的命令
 		if openSession && !IsAnonymCommnd(request[0]) {
-			client.Response = GetServerRespMsg(MESSAGE_COMMAND_NO_LOGIN, "", ERROR_COMMAND_NO_LOGIN, client)
+			client.Response = GetCmdResponse(MESSAGE_COMMAND_NO_LOGIN, "", ERROR_COMMAND_NO_LOGIN, client)
 			return
 		}
 		//模拟登录
@@ -42,13 +42,14 @@ func ParserRequest(client *Client) {
 	command := cmd.GetCmd(request[0])
 	if command == nil {
 		log.Debug("请求命令不存在：", request[0])
-		client.Response = GetServerRespMsg(MESSAGE_COMMAND_NOT_FOUND, "", ERROR_COMMAND_NOT_FOUND, client)
+		client.Response = GetCmdResponse(MESSAGE_COMMAND_NOT_FOUND, "", ERROR_COMMAND_NOT_FOUND, client)
 		return
 	}
+	command.InvokeCount++
 	//请求校验
 	if len(request)-1 < command.MinParam || len(request)-1 > command.MaxParam {
 		log.Debug("命令参数个数错误！最大参数个数：", command.MaxParam, "，最小参数个数：", command.MinParam)
-		client.Response = GetServerRespMsg(MESSAGE_COMMAND_PARAM_ERROR, "", ERROR_COMMAND_PARAM_ERROR, client)
+		client.Response = GetCmdResponse(MESSAGE_COMMAND_PARAM_ERROR, "", ERROR_COMMAND_PARAM_ERROR, client)
 		return
 	}
 	//处理请求

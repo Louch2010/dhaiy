@@ -53,11 +53,15 @@ func main() {
 	err = gdb.InitGDB(dumpOn, dumpTrigger, dumpFilePath)
 	if err != nil {
 		log.Error("初始化、加载持久化文件失败！", err)
-		//return
 	}
 	//启动服务
 	port := GetSystemConfig().MustInt("server", "port", 1334)
 	aliveTime := GetSystemConfig().MustInt("server", "aliveTime", 30)
 	connectType := GetSystemConfig().MustValue("server", "connectType", "long")
 	server.StartServer(port, aliveTime, connectType)
+
+	//服务停止 - 持久化
+	log.Info("服务停止前进行执行久...")
+	gdb.SaveDB()
+	log.Info("服务停止完成!")
 }

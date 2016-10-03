@@ -10,9 +10,9 @@ type Client struct {
 	Protocol    string                             //通讯协议
 	Token       string                             //令牌
 	Reqest      []string                           //请求参数
-	Response    *ServerRespMsg                     //响应信息
+	Response    *CmdResponse                     //响应信息
 	IsLogin     bool                               //是否登录
-	Handler     func(client *Client) ServerRespMsg //处理函数
+	Handler     func(client *Client) CmdResponse //处理函数
 }
 
 //命令

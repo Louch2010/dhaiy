@@ -118,7 +118,7 @@ func handleLongConn(conn net.Conn, timeout int, token string) {
 		//请求内容为空时，不处理
 		if len(client.Reqest) == 0 {
 			log.Debug("请求内容为空，不处理")
-			client.Response = GetServerRespMsg(MESSAGE_SUCCESS, "", nil, client)
+			client.Response = GetCmdResponse(MESSAGE_SUCCESS, "", nil, client)
 		} else {
 			ParserRequest(client) //处理
 		}

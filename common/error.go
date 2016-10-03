@@ -13,6 +13,8 @@ var (
 	ERROR_COMMAND_PARAM_ERROR      = errors.New("command param error")
 	ERROR_COMMAND_NO_LOGIN         = errors.New("you have no connect")
 	ERROR_ITEM_NOT_EXIST           = errors.New("item not exist")
+	ERROR_ITEM_IS_EMPTY            = errors.New("item is empty")
+	ERROR_FIELD_NOT_EXIST          = errors.New("field not exist")
 	ERROR_TABLE_NOT_EXIST          = errors.New("table not exist")
 	ERROR_AUTHORITY_NO_PWD         = errors.New("system use password")
 	ERROR_AUTHORITY_PWD_ERROR      = errors.New("password error")

@@ -46,30 +46,27 @@ func initLogUseDefaultVale() {
 }
 
 func Debug(v ...interface{}) {
-	//	if logFactory == nil {
-	//		default_log.Println(v)
-	//		return
-	//	}
-	//	logFactory.Debug(v)
-	default_log.Println(v)
+	if logFactory == nil {
+		default_log.Println(v)
+		return
+	}
+	logFactory.Debug(v)
 }
 
 func Info(v ...interface{}) {
-	//	if logFactory == nil {
-	//		default_log.Println(v)
-	//		return
-	//	}
-	//	logFactory.Info(v)
-	default_log.Println(v)
+	if logFactory == nil {
+		default_log.Println(v)
+		return
+	}
+	logFactory.Info(v)
 }
 
 func Error(v ...interface{}) {
-	//	if logFactory == nil {
-	//		default_log.Println(v)
-	//		return
-	//	}
-	//	logFactory.Error(v)
-	default_log.Println(v)
+	if logFactory == nil {
+		default_log.Println(v)
+		return
+	}
+	logFactory.Error(v)
 }
 
 func Warn(v ...interface{}) {

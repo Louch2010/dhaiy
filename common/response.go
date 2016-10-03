@@ -8,7 +8,7 @@ import (
 )
 
 //响应信息
-type ServerRespMsg struct {
+type CmdResponse struct {
 	Code     string      //响应码
 	Data     interface{} //响应数据
 	DataType string      //数据类型
@@ -18,15 +18,15 @@ type ServerRespMsg struct {
 }
 
 //JSON响应
-type JsonRespMsg struct {
+type JsonCmdResponse struct {
 	Code     string
 	Msg      string
 	Data     interface{}
 	DataType string //数据类型
 }
 
-func GetServerRespMsg(code string, data interface{}, err error, c *Client) *ServerRespMsg {
-	resp := ServerRespMsg{
+func GetCmdResponse(code string, data interface{}, err error, c *Client) *CmdResponse {
+	resp := CmdResponse{
 		Code:     code,
 		Data:     data,
 		DataType: DATA_TYPE_STRING,
@@ -38,7 +38,7 @@ func GetServerRespMsg(code string, data interface{}, err error, c *Client) *Serv
 }
 
 //根据连接协议，将响应内容进行封装
-func TransferResponse(response *ServerRespMsg) string {
+func TransferResponse(response *CmdResponse) string {
 	protocol := ""
 	if response.Client != nil {
 		protocol = response.Client.Protocol
@@ -56,7 +56,7 @@ func TransferResponse(response *ServerRespMsg) string {
 		if response.Err != nil {
 			msg = response.Err.Error()
 		}
-		obj := JsonRespMsg{
+		obj := JsonCmdResponse{
 			Code:     response.Code,
 			Msg:      msg,
 			Data:     response.Data,
@@ -83,6 +83,11 @@ func toString(v interface{}) string {
 		break
 	case float64:
 		response = strconv.FormatFloat(conv, 'E', -1, 64)
+		break
+	case []string:
+		for _, v := range conv {
+			response += v + "\r\n"
+		}
 		break
 	case *CacheItem:
 		if conv != nil {
