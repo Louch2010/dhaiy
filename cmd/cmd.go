@@ -54,6 +54,16 @@ func InitCmd() {
 	cmdHandlers["spop"] = newCmd("spop", 1, 1, false, HandleSPopCommand)
 	cmdHandlers["srandmember"] = newCmd("srandmember", 1, 1, false, HandleSRandMemberCommand)
 	//list
+	cmdHandlers["lpush"] = newCmd("lpush", 2, 2, true, HandleLPushCommand)
+	cmdHandlers["lpushx"] = newCmd("lpushx", 2, 2, true, HandleLPushXCommand)
+	cmdHandlers["lrange"] = newCmd("lrange", 3, 3, false, HandleLRangeCommand)
+	cmdHandlers["llen"] = newCmd("llen", 1, 1, false, HandleLLenCommand)
+	cmdHandlers["lrem"] = newCmd("lrem", 3, 3, true, HandleLRemCommand)
+	cmdHandlers["lindex"] = newCmd("lindex", 2, 2, false, HandleLIndexCommand)
+	cmdHandlers["lpop"] = newCmd("lpop", 1, 1, true, HandleLPopCommand)
+	cmdHandlers["rpush"] = newCmd("rpush", 2, 2, false, HandleRPushCommand)
+	cmdHandlers["rpushx"] = newCmd("rpushx", 2, 2, false, HandleRPushXCommand)
+	cmdHandlers["rpop"] = newCmd("rpop", 2, 2, false, HandleRPopXCommand)
 
 	log.Info("初始化命令集合完成")
 }

@@ -32,6 +32,7 @@ const (
 	DATA_TYPE_LIST   = "list"   //列表
 	DATA_TYPE_ZSET   = "zset"   //有序集合
 	DATA_TYPE_OBJECT = "object" //对象
+	DATA_TYPE_NIL    = "nil"    //空
 )
 
 //协议类型

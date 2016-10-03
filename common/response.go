@@ -48,6 +48,9 @@ func TransferResponse(response *CmdResponse) string {
 		if response.Err != nil {
 			return response.Err.Error() + FLAG_CHAR_SOCKET_TERMINAL_RESPONSE_END
 		}
+		if response.DataType == DATA_TYPE_NIL {
+			return "nil" + FLAG_CHAR_SOCKET_TERMINAL_RESPONSE_END
+		}
 		ret := toString(response.Data)
 		if ret == "" {
 			ret = "OK"
