@@ -160,7 +160,7 @@ func HandleExistCommand(client *Client) {
 }
 
 //切换表
-func HandleUseCommand(client *Client) {
+func HandleSelectCommand(client *Client) {
 	arg := client.Reqest[1]
 	cacheTable, err := cache.Cache(arg)
 	if err != nil {
@@ -248,6 +248,26 @@ func HandleInfoCommand(client *Client) {
 		response += k + ": " + v + "\r\n"
 	}
 	client.Response = GetCmdResponse(MESSAGE_SUCCESS, response, nil, client)
+}
+
+//flushdb处理（当前数据库）
+func HandleFlushDBCommand(client *Client) {
+	m := make(map[string]*CacheItem)
+	client.CacheTable.Items(m)
+	client.Response = GetCmdResponse(MESSAGE_SUCCESS, "", nil, client)
+}
+
+//flushall处理（所有库）
+func HandleFlushAllCommand(client *Client) {
+	db := cache.GetCacheTables()
+	sysTable := GetSystemConfig().MustValue("server", "sysTable", "sys")
+	for k, v := range db {
+		if k != sysTable {
+			m := make(map[string]*CacheItem)
+			v.Items(m)
+		}
+	}
+	client.Response = GetCmdResponse(MESSAGE_SUCCESS, "", nil, client)
 }
 
 //后台保存gdb文件

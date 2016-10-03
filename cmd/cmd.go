@@ -18,11 +18,13 @@ func InitCmd() {
 	cmdHandlers["exit"] = newCmd("exit", 0, 0, false, HandleExitCommand)
 	cmdHandlers["del"] = newCmd("del", 1, 100, true, HandleDelCommand)
 	cmdHandlers["exist"] = newCmd("exist", 1, 1, false, HandleExistCommand)
-	cmdHandlers["use"] = newCmd("use", 1, 1, false, HandleUseCommand)
+	cmdHandlers["select"] = newCmd("select", 1, 1, false, HandleSelectCommand)
 	cmdHandlers["showt"] = newCmd("showt", 0, 1, false, HandleShowtCommand)
 	cmdHandlers["showi"] = newCmd("showi", 0, 1, false, HandleShowiCommand)
 	cmdHandlers["info"] = newCmd("info", 0, 0, false, HandleInfoCommand)
 	cmdHandlers["bgsave"] = newCmd("bgsave", 0, 0, false, HandleBgSaveCommand)
+	cmdHandlers["flushdb"] = newCmd("flushdb", 0, 0, false, HandleFlushDBCommand)
+	cmdHandlers["flushall"] = newCmd("flushall", 0, 0, false, HandleFlushAllCommand)
 	//string
 	cmdHandlers["set"] = newCmd("set", 2, 3, true, HandleSetCommand)
 	cmdHandlers["get"] = newCmd("get", 1, 1, false, HandleGetCommand)
@@ -51,6 +53,7 @@ func InitCmd() {
 	cmdHandlers["sismember"] = newCmd("sismember", 2, 2, false, HandleSisMemberCommand)
 	cmdHandlers["spop"] = newCmd("spop", 1, 1, false, HandleSPopCommand)
 	cmdHandlers["srandmember"] = newCmd("srandmember", 1, 1, false, HandleSRandMemberCommand)
+	//list
 
 	log.Info("初始化命令集合完成")
 }

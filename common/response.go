@@ -48,7 +48,11 @@ func TransferResponse(response *CmdResponse) string {
 		if response.Err != nil {
 			return response.Err.Error() + FLAG_CHAR_SOCKET_TERMINAL_RESPONSE_END
 		}
-		return toString(response.Data) + FLAG_CHAR_SOCKET_TERMINAL_RESPONSE_END
+		ret := toString(response.Data)
+		if ret == "" {
+			ret = "OK"
+		}
+		return ret + FLAG_CHAR_SOCKET_TERMINAL_RESPONSE_END
 	}
 	//JSON方式：对响应信息进行json封装
 	if protocol == PROTOCOL_RESPONSE_JSON {

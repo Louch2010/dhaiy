@@ -80,6 +80,13 @@ func (table *CacheTable) GetItems() map[string]*CacheItem {
 	return table.items
 }
 
+//获取所有缓存项
+func (table *CacheTable) Items(m map[string]*CacheItem) {
+	table.RLock()
+	table.items = m
+	table.RUnlock()
+}
+
 //访问表时更新表信息
 func (table *CacheTable) Access() {
 	table.Lock()
