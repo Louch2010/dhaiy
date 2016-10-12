@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"strconv"
 )
 
 //有序项
@@ -13,14 +12,16 @@ type SortItem struct {
 
 //有序集合
 type SortSet struct {
-	length int
-	items  []*SortItem
+	length   int
+	items    []*SortItem
+	scoreMap map[interface{}]int
 }
 
-func NewSortSet() SortSet {
-	return SortSet{
-		length: 0,
-		items:  make([]*SortItem, 10),
+func NewSortSet() *SortSet {
+	return &SortSet{
+		length:   0,
+		items:    make([]*SortItem, 10),
+		scoreMap: make(map[interface{}]int),
 	}
 }
 
@@ -40,6 +41,20 @@ func (l *SortSet) Add(score int, data interface{}) {
 
 //增加元素
 func (l *SortSet) AddItem(item *SortItem) {
+	//如果已经存在，则修改score的值
+	if _, ok := l.scoreMap[item.Data]; ok {
+		l.scoreMap[item.Data] = item.Score
+		for i := 0; i < l.length; i++ {
+			if l.items[i].Data == item.Data {
+				l.items[i].Score = item.Score
+				break
+			}
+		}
+		return
+	}
+	//scoreMap添加元素
+	l.scoreMap[item.Data] = item.Score
+	//items添加元素
 	if l.length == 0 {
 		l.length++
 		l.items[0] = item
@@ -95,6 +110,8 @@ func (l *SortSet) RemoveItem(index int) *SortItem {
 		return nil
 	}
 	item := l.items[index]
+	delete(l.scoreMap, item.Data)
+	l.length--
 	for i := index; i < l.Len(); i++ {
 		l.items[i] = l.items[i+1]
 	}
@@ -112,6 +129,12 @@ func (l *SortSet) RemoveData(data interface{}) *SortItem {
 			break
 		}
 	}
+	//不存在
+	if item == nil {
+		return nil
+	}
+	delete(l.scoreMap, item.Data)
+	l.length--
 	//将index后的数据进行复制
 	for i := index; i < l.length; i++ {
 		l.items[i] = l.items[i+1]
@@ -119,11 +142,45 @@ func (l *SortSet) RemoveData(data interface{}) *SortItem {
 	return item
 }
 
-func (l *SortSet) Test() {
-	//fmt.Println("容量为：", len(l.items), "，长度为：", l.length)
-	sb := ""
-	for i := 0; i < l.Len(); i++ {
-		sb = sb + strconv.Itoa(l.items[i].Score) + ","
+//获取分值
+func (l *SortSet) Score(data interface{}) int {
+	if score, ok := l.scoreMap[data]; ok {
+		return score
 	}
-	fmt.Println("items:", sb)
+	return -99
+}
+
+//获取排名
+func (l *SortSet) Rank(data interface{}) int {
+	for index, item := range l.GetItems() {
+		if data == item.Data {
+			return index + 1
+		}
+	}
+	return 0
+}
+
+//获取分值范围内的数量
+func (l *SortSet) Count(min, max int) int {
+	count := 0
+	for _, item := range l.GetItems() {
+		if item.Score >= min && item.Score <= max {
+			count++
+		}
+	}
+	return count
+}
+
+//增加分数
+func (l *SortSet) AddScore(data interface{}, add int) int {
+	for _, item := range l.GetItems() {
+		if data == item.Data {
+			item.Score = item.Score + add
+			l.scoreMap[item.Data] = item.Score
+			//重新排序 TODO
+
+			return item.Score
+		}
+	}
+	return 0
 }

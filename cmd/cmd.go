@@ -64,6 +64,14 @@ func InitCmd() {
 	cmdHandlers["rpush"] = newCmd("rpush", 2, 2, false, HandleRPushCommand)
 	cmdHandlers["rpushx"] = newCmd("rpushx", 2, 2, false, HandleRPushXCommand)
 	cmdHandlers["rpop"] = newCmd("rpop", 2, 2, false, HandleRPopXCommand)
+	//zset
+	cmdHandlers["zadd"] = newCmd("zadd", 3, 3, true, HandleZAddCommand)
+	cmdHandlers["zcard"] = newCmd("zcard", 1, 1, false, HandleZCardCommand)
+	cmdHandlers["zcount"] = newCmd("zcount", 3, 3, false, HandleZCountCommand)
+	cmdHandlers["zscore"] = newCmd("zscore", 2, 2, false, HandleZScoreCommand)
+	cmdHandlers["zrank"] = newCmd("zrank", 2, 2, false, HandleZRankCommand)
+	cmdHandlers["zrem"] = newCmd("zrem", 2, 2, true, HandleZRemkCommand)
+	cmdHandlers["zincrby"] = newCmd("zincrby", 3, 3, true, HandleZIncrByCommand)
 
 	log.Info("初始化命令集合完成")
 }
