@@ -2,17 +2,20 @@ package common
 
 //客户端
 type Client struct {
-	Host        string                             //地址
-	Port        int                                //端口
-	Table       string                             //表名
-	CacheTable  *CacheTable                        //表指针
-	ListenEvent []string                           //侦听事件
-	Protocol    string                             //通讯协议
-	Token       string                             //令牌
-	Reqest      []string                           //请求参数
+	ServerId    string                           //服务器唯一标识
+	Host        string                           //地址
+	Port        int                              //端口
+	Table       string                           //表名
+	CacheTable  *CacheTable                      //表指针
+	ListenEvent []string                         //侦听事件
+	Protocol    string                           //通讯协议
+	Token       string                           //令牌
+	Reqest      []string                         //请求参数
 	Response    *CmdResponse                     //响应信息
-	IsLogin     bool                               //是否登录
+	IsLogin     bool                             //是否登录
 	Handler     func(client *Client) CmdResponse //处理函数
+	SlaveList   []*ServerInfo                    //从库列表
+	Master      *ServerInfo                      //主库
 }
 
 //命令
@@ -23,4 +26,13 @@ type Cmd struct {
 	InvokeCount int64                //调用次数
 	IsWrite     bool                 //是否为写命令
 	HandlerFunc func(client *Client) //处理函数
+}
+
+//服务器信息
+type ServerInfo struct {
+	Host         string   //服务器IP、端口
+	Port         int      //端口号
+	Status       int      //状态：1首次同步、2同步中、3同步异常
+	SyncPosition int      //同步偏移量
+	CmdQueue     []string //命令集合
 }

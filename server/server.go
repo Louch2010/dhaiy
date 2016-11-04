@@ -19,7 +19,7 @@ import (
 var serverStatusFlag bool = false
 
 //启动服务
-func StartServer(port int, timeout int, connectType string) error {
+func StartServer(serverId string, port int, timeout int, connectType string) error {
 	if serverStatusFlag {
 		log.Error("服务已经在运行，无需再次启动")
 		return ERROR_SERVER_ALREADY_START
@@ -52,9 +52,9 @@ func StartServer(port int, timeout int, connectType string) error {
 		//根据配置启用不同的连接类型
 		connectType = strings.ToLower(connectType)
 		if connectType == "long" {
-			go handleLongConn(conn, timeout, token)
+			go handleLongConn(conn, timeout, token, serverId)
 		} else if connectType == "short" {
-			go handleShortConn(conn, timeout, token)
+			go handleShortConn(conn, timeout, token, serverId)
 		} else {
 			log.Error("非法的服务器配置，连接类型：", connectType)
 			return ERROR_SERVER_CONNECT_TYPE
@@ -71,7 +71,7 @@ func Stop() {
 }
 
 //短连接处理
-func handleShortConn(conn net.Conn, timeout int, token string) {
+func handleShortConn(conn net.Conn, timeout int, token string, serverId string) {
 	log.Debug("开始处理短连接请求...")
 	conn.SetDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
 	//将请求读入缓存，并读取其中的一行
@@ -79,6 +79,7 @@ func handleShortConn(conn net.Conn, timeout int, token string) {
 	line, _ := buff.ReadString(FLAG_CHAR_SOCKET_COMMND_END)
 	//解析请求并响应
 	client := &Client{}
+	client.ServerId = serverId
 	client.Reqest = splitParam(line)
 	ParserRequest(client)
 	response := client.Response
@@ -88,10 +89,11 @@ func handleShortConn(conn net.Conn, timeout int, token string) {
 }
 
 //长连接处理
-func handleLongConn(conn net.Conn, timeout int, token string) {
+func handleLongConn(conn net.Conn, timeout int, token string, serverId string) {
 	log.Debug("开始处理长连接请求...")
 	//客户端信息
 	client := &Client{}
+	client.ServerId = serverId
 	for {
 		//将请求内容写入buff
 		buff := bufio.NewReader(conn)

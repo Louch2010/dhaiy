@@ -27,4 +27,6 @@ var (
 	GDB_FILE_VERSION_ERROR = errors.New("gdb file version is not support")
 	GDB_FILE_CHECK_ERROR   = errors.New("gdb file is broken")
 	GDB_FILE_FORMAT_ERROR  = errors.New("error gdb file format")
+
+	ERROR_SLAVEOF_HOST_ERROR = errors.New("slaveof host is error")
 )

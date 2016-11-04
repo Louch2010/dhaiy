@@ -12,6 +12,8 @@ import (
 )
 
 func main() {
+	//生成服务器唯一序列号
+	serverId := GetGuid()
 	//初始化日志
 	args := os.Args
 	log.Info("启动参数：", args)
@@ -58,7 +60,7 @@ func main() {
 	port := GetSystemConfig().MustInt("server", "port", 1334)
 	aliveTime := GetSystemConfig().MustInt("server", "aliveTime", 30)
 	connectType := GetSystemConfig().MustValue("server", "connectType", "long")
-	server.StartServer(port, aliveTime, connectType)
+	server.StartServer(serverId, port, aliveTime, connectType)
 
 	//服务停止 - 持久化
 	log.Info("服务停止前进行执行久...")

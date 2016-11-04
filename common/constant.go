@@ -102,6 +102,12 @@ const (
 	GDB_TYPE_OBJECT = "8" //对象
 )
 
+//复制
+const (
+	SLAVE_NONE = "none" //取消同步
+
+)
+
 //帮助
 const CONFIG_HELP_CONTENT_EN = `
 [connect]
