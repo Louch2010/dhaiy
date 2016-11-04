@@ -74,7 +74,7 @@ func InitCmd() {
 	cmdHandlers["zincrby"] = newCmd("zincrby", 3, 3, true, HandleZIncrByCommand)
 	//系统命令
 	cmdHandlers["slaveof"] = newCmd("slaveof", 1, 1, false, HandleSlaveOfCommand)
-	cmdHandlers["syncdata"] = newCmd("syncdata", 1, 1, false, HandleSyncDataCommand)
+	cmdHandlers["syncdata"] = newCmd("syncdata", 4, 4, false, HandleSyncDataCommand)
 
 	log.Info("初始化命令集合完成")
 }
