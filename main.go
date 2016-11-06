@@ -12,8 +12,6 @@ import (
 )
 
 func main() {
-	//生成服务器唯一序列号
-	serverId := GetGuid()
 	//初始化日志
 	args := os.Args
 	log.Info("启动参数：", args)
@@ -27,13 +25,11 @@ func main() {
 		log.Error("初始化配置文件失败！", err)
 		return
 	}
+	//实例化配置
+	LoadServerConfig()
+	config := GetServerConfig()
 	//初始化日志
-	level := GetSystemConfig().MustValue("log", "level", log.LOG_DEFAULT_LEVEL)
-	format := GetSystemConfig().MustValue("log", "format", log.LOG_DEFAULT_FORMAT)
-	path := GetSystemConfig().MustValue("log", "path", log.LOG_DEFAULT_PATH)
-	roll := GetSystemConfig().MustValue("log", "roll", log.LOG_DEFAULT_ROLL)
-	consoleOn := GetSystemConfig().MustBool("log", "console.on", true)
-	err = log.InitLog(level, format, path, roll, consoleOn)
+	err = log.InitLog(config.LogLevel, config.LogFormat, config.LogPath, config.LogRoll, config.LogConsoleOn)
 	if err != nil {
 		log.Error("初始化日志失败！", err)
 		return
@@ -49,19 +45,12 @@ func main() {
 	cmd.InitCmd()
 	//载入gdb文件
 	log.Info("初始化、加载持久化文件...")
-	dumpOn := GetSystemConfig().MustBool("dump", "dump.on", true)
-	dumpTrigger := GetSystemConfig().MustValue("dump", "trigger", "")
-	dumpFilePath := GetSystemConfig().MustValue("dump", "filePath", "./data/dump.gdb")
-	err = gdb.InitGDB(dumpOn, dumpTrigger, dumpFilePath)
+	err = gdb.InitGDB()
 	if err != nil {
 		log.Error("初始化、加载持久化文件失败！", err)
 	}
 	//启动服务
-	port := GetSystemConfig().MustInt("server", "port", 1334)
-	aliveTime := GetSystemConfig().MustInt("server", "aliveTime", 30)
-	connectType := GetSystemConfig().MustValue("server", "connectType", "long")
-	server.StartServer(serverId, port, aliveTime, connectType)
-
+	server.StartServer(config)
 	//服务停止 - 持久化
 	log.Info("服务停止前进行执行久...")
 	gdb.SaveDB()

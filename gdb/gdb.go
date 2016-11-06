@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/louch2010/dhaiy/cache"
+	. "github.com/louch2010/dhaiy/common"
 	"github.com/louch2010/dhaiy/log"
 	"github.com/louch2010/goutil"
 )
@@ -16,7 +17,12 @@ var triggers [][]int
 var filePath = ""
 
 //初始化GDB
-func InitGDB(dumpOn bool, dumpTrigger string, dumpFilePath string) error {
+func InitGDB() error {
+	config := GetServerConfig()
+	dumpOn := config.DumpOn
+	dumpTrigger := config.DumpTrigger
+	dumpFilePath := config.DumpFilePath
+
 	open = dumpOn
 	filePath = dumpFilePath
 	if !dumpOn || goutil.StringUtil().IsEmpty(dumpFilePath) || goutil.StringUtil().IsEmpty(dumpTrigger) {

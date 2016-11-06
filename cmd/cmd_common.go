@@ -49,7 +49,7 @@ func HandleHelpCommand(client *Client) {
 //连接命令处理connect [-t'table'] [-a'pwd'] [-i'ip'] [-p'port'] [-e'e1,e2...']
 func HandleConnectCommand(client *Client) {
 	log.Debug("处理connect请求")
-	table := GetSystemConfig().MustValue("table", "default", DEFAULT_TABLE_NAME)
+	table := client.ServerConfig.DefaultTable
 	token := client.Token
 	var pwd, ip, port, event, protocol string
 	args := client.Reqest[1:]
@@ -84,7 +84,7 @@ func HandleConnectCommand(client *Client) {
 		}
 	}
 	//密码校验
-	syspwd := GetSystemConfig().MustValue("server", "password", "")
+	syspwd := client.ServerConfig.ServerPassword
 	if len(syspwd) > 0 {
 		if len(pwd) == 0 {
 			client.Response = GetCmdResponse(MESSAGE_NO_PWD, "", ERROR_AUTHORITY_NO_PWD, nil)
@@ -260,7 +260,7 @@ func HandleFlushDBCommand(client *Client) {
 //flushall处理（所有库）
 func HandleFlushAllCommand(client *Client) {
 	db := cache.GetCacheTables()
-	sysTable := GetSystemConfig().MustValue("server", "sysTable", "sys")
+	sysTable := client.ServerConfig.ServerSysTable
 	for k, v := range db {
 		if k != sysTable {
 			m := make(map[string]*CacheItem)

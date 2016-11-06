@@ -20,15 +20,15 @@ func ParserRequest(client *Client) {
 	}
 	//没有登录
 	if !client.IsLogin {
-		openSession := GetSystemConfig().MustBool("client", "openSession", true)
+		openSession := client.ServerConfig.ClientOpenSession
 		//需要登录，而且也不是免登录的命令
-		if openSession && !IsAnonymCommnd(request[0]) {
+		if openSession && !IsAnonymCommnd(request[0], client.ServerConfig.ServerAnonymCommnd) {
 			client.Response = GetCmdResponse(MESSAGE_COMMAND_NO_LOGIN, "", ERROR_COMMAND_NO_LOGIN, client)
 			return
 		}
 		//模拟登录
 		if !openSession {
-			table := GetSystemConfig().MustValue("table", "default", DEFAULT_TABLE_NAME)
+			table := client.ServerConfig.DefaultTable
 			cacheTable, _ := cache.Cache(table)
 			client = &Client{
 				Table:      table,
@@ -57,8 +57,7 @@ func ParserRequest(client *Client) {
 }
 
 //判断是否为免登录命令
-func IsAnonymCommnd(commnd string) bool {
-	anonymCommnd := SystemConfigFile.MustValue("server", "anonymCommnd", "ping,connect,exit,help")
+func IsAnonymCommnd(commnd, anonymCommnd string) bool {
 	list := strings.Split(anonymCommnd, ",")
 	for _, c := range list {
 		if commnd == c {

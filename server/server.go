@@ -19,7 +19,10 @@ import (
 var serverStatusFlag bool = false
 
 //启动服务
-func StartServer(serverId string, port int, timeout int, connectType string) error {
+func StartServer(config *ServerConfig) error {
+	port := config.ServerPort
+	timeout := config.ServerAliveTime
+	connectType := config.ServerConnectType
 	if serverStatusFlag {
 		log.Error("服务已经在运行，无需再次启动")
 		return ERROR_SERVER_ALREADY_START
@@ -52,9 +55,9 @@ func StartServer(serverId string, port int, timeout int, connectType string) err
 		//根据配置启用不同的连接类型
 		connectType = strings.ToLower(connectType)
 		if connectType == "long" {
-			go handleLongConn(conn, timeout, token, serverId)
+			go handleLongConn(conn, timeout, token, config)
 		} else if connectType == "short" {
-			go handleShortConn(conn, timeout, token, serverId)
+			go handleShortConn(conn, timeout, token, config)
 		} else {
 			log.Error("非法的服务器配置，连接类型：", connectType)
 			return ERROR_SERVER_CONNECT_TYPE
@@ -71,7 +74,7 @@ func Stop() {
 }
 
 //短连接处理
-func handleShortConn(conn net.Conn, timeout int, token string, serverId string) {
+func handleShortConn(conn net.Conn, timeout int, token string, config *ServerConfig) {
 	log.Debug("开始处理短连接请求...")
 	conn.SetDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
 	//将请求读入缓存，并读取其中的一行
@@ -79,7 +82,7 @@ func handleShortConn(conn net.Conn, timeout int, token string, serverId string) 
 	line, _ := buff.ReadString(FLAG_CHAR_SOCKET_COMMND_END)
 	//解析请求并响应
 	client := &Client{}
-	client.ServerId = serverId
+	client.ServerConfig = config
 	client.Reqest = splitParam(line)
 	ParserRequest(client)
 	response := client.Response
@@ -89,11 +92,11 @@ func handleShortConn(conn net.Conn, timeout int, token string, serverId string) 
 }
 
 //长连接处理
-func handleLongConn(conn net.Conn, timeout int, token string, serverId string) {
+func handleLongConn(conn net.Conn, timeout int, token string, config *ServerConfig) {
 	log.Debug("开始处理长连接请求...")
 	//客户端信息
 	client := &Client{}
-	client.ServerId = serverId
+	client.ServerConfig = config
 	for {
 		//将请求内容写入buff
 		buff := bufio.NewReader(conn)

@@ -15,8 +15,8 @@ var (
 
 //初始化缓存表
 func InitCache() error {
-	sysTable := GetSystemConfig().MustValue("server", "sysTable", "sys")
-	defaultTable := GetSystemConfig().MustValue("table", "default", "default")
+	sysTable := GetServerConfig().ServerSysTable
+	defaultTable := GetServerConfig().DefaultTable
 	_, err := Cache(sysTable)
 	if err != nil {
 		log.Error("初始化系统缓存表失败，表名：", sysTable)
@@ -32,13 +32,13 @@ func InitCache() error {
 
 //获取系统表
 func GetSysTable() (*CacheTable, error) {
-	sysTable := GetSystemConfig().MustValue("server", "sysTable", "sys")
+	sysTable := GetServerConfig().ServerSysTable
 	return Cache(sysTable)
 }
 
 //获取默认表
 func DefaultCache() *CacheTable {
-	defaultTable := GetSystemConfig().MustValue("table", "default", "default")
+	defaultTable := GetServerConfig().DefaultTable
 	t, _ := Cache(defaultTable)
 	return t
 }
