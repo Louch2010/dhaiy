@@ -11,6 +11,7 @@ type Client struct {
 	Protocol     string                           //通讯协议
 	Token        string                           //令牌
 	Reqest       []string                         //请求参数
+	ReqestString string                           //请求命令原文
 	Response     *CmdResponse                     //响应信息
 	IsLogin      bool                             //是否登录
 	Handler      func(client *Client) CmdResponse //处理函数
@@ -28,9 +29,10 @@ type Cmd struct {
 
 //服务器信息
 type ServerInfo struct {
+	ServerId     string   //服务器唯一标识
 	Host         string   //服务器IP、端口
 	Port         int      //端口号
-	Status       int      //状态：1首次同步、2同步中、3同步异常
+	Status       int      //状态：1首次同步中、2同步中、3同步异常
 	SyncPosition int      //同步偏移量
 	CmdQueue     []string //命令集合
 }

@@ -54,6 +54,12 @@ func ParserRequest(client *Client) {
 	}
 	//处理请求
 	command.HandlerFunc(client)
+	//如果命令处理成功，且为“写”命令，则对命令分发给slave
+	if client.Response.Code == MESSAGE_SUCCESS && command.IsWrite && len(client.ServerConfig.SlaveList) > 0 {
+		cmd := client.ReqestString
+		log.Debug("命令执行成功且为“写”命令，将命令复制到slave，命令原文：", cmd)
+		go MasterCopyCommandToSlave(client.ServerConfig.SlaveList, cmd)
+	}
 }
 
 //判断是否为免登录命令

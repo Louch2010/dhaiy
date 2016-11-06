@@ -84,6 +84,7 @@ func handleShortConn(conn net.Conn, timeout int, token string, config *ServerCon
 	client := &Client{}
 	client.ServerConfig = config
 	client.Reqest = splitParam(line)
+	client.ReqestString = line
 	ParserRequest(client)
 	response := client.Response
 	conn.Write([]byte(TransferResponse(response)))
@@ -119,6 +120,7 @@ func handleLongConn(conn net.Conn, timeout int, token string, config *ServerConf
 		//解析请求
 		client.Token = token
 		client.Reqest = splitParam(line)
+		client.ReqestString = line
 		client.Response = nil //将response置为空
 		//请求内容为空时，不处理
 		if len(client.Reqest) == 0 {
